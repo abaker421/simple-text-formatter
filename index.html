@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Formatter</title>
+    <script src="textFormatter.js" defer></script>
+</head>
+<body>
+    <div id="userTextInputDiv">
+        <form>
+            <input type="text" id="userTextInput" oninput="display()">
+            <input type="radio" name="styleCheckbox" id="boldCheckbox" onchange="display()"> 
+            <label for="boldCheckbox">Bold</label> 
+            <input type="radio" name="styleCheckbox" id="italicsCheckbox" onchange="display()"> 
+            <label for="italicsCheckbox">Italics</label> 
+            <input type="radio" name="styleCheckbox" id="underlineCheckbox" onchange="display()">
+            <label for="underlineCheckbox">Underline</label>  
+            <input type="radio" name="styleCheckbox" id="strikethroughCheckbox" onchange="display()"> 
+            <label for="strikethroughCheckbox">Strikethrough</label>
+            <input type="radio" name="styleCheckbox" id="lowercaseCheckbox" onchange="display()"> 
+            <label for="lowercaseCheckbox">Lowercase</label>      
+        </form>
+    </div> 
+    <div id="resultsDiv">
+        <p id="resultText" contenteditable="true"></p>
+    </div> 
+</body>
+</html>
