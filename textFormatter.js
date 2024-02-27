@@ -1,3 +1,6 @@
+// TODO Rename lowercase to format sentences
+// Rename checkboxes to radios
+
 function capitalizeFirstLetter(inputString) {
     if (typeof inputString !== 'string' || inputString.length === 0) {
         return inputString;
