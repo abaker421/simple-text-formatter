@@ -13,7 +13,7 @@ function capitalizeFirstLetter(inputString) {
             const restOfString = word.slice(1);
             return firstChar.toUpperCase() + restOfString.toLowerCase();
         } else {
-            return word; // Preserve empty strings (e.g., consecutive spaces)
+            return word; // Preserve empty strings (ie, consecutive spaces)
         }
     });
 
