@@ -1,25 +1,36 @@
 // textFormatter.js
+function capitalizeFirstLetter(sentence) {
+    if (sentence.length > 0) {
+        const firstChar = sentence.trim().charAt(0);
+        const restOfString = sentence.trim().slice(1);
+        return firstChar.toUpperCase() + restOfString.toLowerCase();
+    } else {
+        return sentence; // Preserve empty strings (i.e., consecutive spaces)
+    }
+}
+
 function formatSentences(inputString) {
     if (typeof inputString !== 'string' || inputString.length === 0) {
         return inputString;
     }
 
-    // Split the string into sentences using periods as the delimiter
-    const sentences = inputString.split('.');
+    // Define punctuation marks to consider
+    const punctuationMarks = ['.', '?', '!'];
+
+    // Split the string into sentences using punctuation marks as delimiters
+    const sentences = inputString.split(new RegExp(`([${punctuationMarks.join('')}])`));
 
     // Capitalize the first letter of each sentence
-    const formattedSentences = sentences.map(sentence => {
-        if (sentence.length > 0) {
-            const firstChar = sentence.trim().charAt(0);
-            const restOfString = sentence.trim().slice(1);
-            return firstChar.toUpperCase() + restOfString.toLowerCase();
+    const formattedSentences = sentences.map((segment, index) => {
+        if (punctuationMarks.includes(segment)) {
+            return segment + ' '; // Preserve punctuation marks, add space after punctuation
         } else {
-            return sentence; // Preserve empty strings (i.e., consecutive spaces)
+            return capitalizeFirstLetter(segment);
         }
     });
 
-    // Join the sentences back together with periods
-    const resultString = formattedSentences.join('. ');
+    // Join the sentences back together with original punctuation marks
+    const resultString = formattedSentences.join('');
 
     return resultString;
 }
