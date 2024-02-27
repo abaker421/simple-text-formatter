@@ -1,27 +1,25 @@
-// TODO Rename lowercase to format sentences
-// Rename checkboxes to radios
-
-function capitalizeFirstLetter(inputString) {
+// textFormatter.js
+function formatSentences(inputString) {
     if (typeof inputString !== 'string' || inputString.length === 0) {
         return inputString;
     }
 
-    // Split the string into words
-    const words = inputString.split(/[\s.]+/);
+    // Split the string into sentences using periods as the delimiter
+    const sentences = inputString.split('.');
 
-    // Capitalize the first letter of each word
-    const capitalizedWords = words.map(word => {
-        if (word.length > 0) {
-            const firstChar = word.charAt(0);
-            const restOfString = word.slice(1);
+    // Capitalize the first letter of each sentence
+    const formattedSentences = sentences.map(sentence => {
+        if (sentence.length > 0) {
+            const firstChar = sentence.trim().charAt(0);
+            const restOfString = sentence.trim().slice(1);
             return firstChar.toUpperCase() + restOfString.toLowerCase();
         } else {
-            return word; // Preserve empty strings (ie, consecutive spaces)
+            return sentence; // Preserve empty strings (i.e., consecutive spaces)
         }
     });
 
-    // Join the words back together with spaces
-    const resultString = capitalizedWords.join(' ');
+    // Join the sentences back together with periods
+    const resultString = formattedSentences.join('. ');
 
     return resultString;
 }
@@ -35,7 +33,7 @@ function display() {
     const italics = document.getElementById("italicsCheckbox").checked;
     const underline = document.getElementById("underlineCheckbox").checked;
     const strikethrough = document.getElementById("strikethroughCheckbox").checked;
-    const lowercase = document.getElementById("lowercaseCheckbox").checked;
+    const formatSentencesCheckbox = document.getElementById("formatSentencesCheckbox").checked;
 
     // Build the style string based on checkbox values
     let styles = "";
@@ -47,8 +45,8 @@ function display() {
     // Apply styles and set the text content
     const resultTextElement = document.getElementById("resultText");
 
-    // Capitalize the first letter after a period or space and handle lowercase based on checkbox
-    const modifiedUserInput = lowercase ? capitalizeFirstLetter(userInput) : userInput;
+    // Apply sentence formatting based on checkbox
+    const modifiedUserInput = formatSentencesCheckbox ? formatSentences(userInput) : userInput;
 
     resultTextElement.style.cssText = styles;
     resultTextElement.textContent = modifiedUserInput;
