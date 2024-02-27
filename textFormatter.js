@@ -3,10 +3,24 @@ function capitalizeFirstLetter(inputString) {
         return inputString;
     }
 
-    const firstChar = inputString.charAt(0);
-    const restOfString = inputString.slice(1);
+    // Split the string into words
+    const words = inputString.split(/[\s.]+/);
 
-    return firstChar.toUpperCase() + restOfString.toLowerCase();
+    // Capitalize the first letter of each word
+    const capitalizedWords = words.map(word => {
+        if (word.length > 0) {
+            const firstChar = word.charAt(0);
+            const restOfString = word.slice(1);
+            return firstChar.toUpperCase() + restOfString.toLowerCase();
+        } else {
+            return word; // Preserve empty strings (e.g., consecutive spaces)
+        }
+    });
+
+    // Join the words back together with spaces
+    const resultString = capitalizedWords.join(' ');
+
+    return resultString;
 }
 
 function display() {
@@ -30,7 +44,7 @@ function display() {
     // Apply styles and set the text content
     const resultTextElement = document.getElementById("resultText");
 
-    // Capitalize the first letter and handle lowercase based on checkbox
+    // Capitalize the first letter after a period or space and handle lowercase based on checkbox
     const modifiedUserInput = lowercase ? capitalizeFirstLetter(userInput) : userInput;
 
     resultTextElement.style.cssText = styles;
