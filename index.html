@@ -1,512 +1,733 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e40af">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Text Formatter</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2E5082" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface2: #334155;
-      --border: #2d3f55;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --radius: 10px;
+      --primary:        #2E5082;
+      --primary-dark:   #1c3560;
+      --primary-light:  #3d6399;
+      --accent:         #A07020;
+      --accent-bg:      #FFF8E8;
+      --accent-border:  #d4a840;
+      --accent-hover:   #8a5f18;
+      --neutral:        #526070;
+      --bg:             #EFF2F7;
+      --white:          #FFFFFF;
+      --border:         #d0dcea;
+      --text-light:     #b8cce0;
+      --text-dark:      #1e2a38;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
+    html, body {
+      height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 24px 16px 48px;
+      color: var(--text-dark);
     }
 
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-    }
-
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 4px;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      background: var(--accent);
-      color: white;
-      padding: 2px 7px;
-      border-radius: 99px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    .subtitle {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-    }
-
-    /* ── Input ── */
-    .input-wrap {
-      position: relative;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 14px 14px 30px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-size: 1rem;
-      line-height: 1.55;
-      resize: vertical;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    textarea:focus { border-color: var(--accent); }
-    textarea::placeholder { color: var(--text-muted); }
-
-    .char-count {
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-
-    /* ── Section labels ── */
-    .section-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--text-muted);
-      margin: 18px 0 8px;
-      font-weight: 600;
-    }
-
-    /* ── Button group ── */
-    .btn-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .btn {
-      padding: 6px 14px;
-      border-radius: 7px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-family: inherit;
-      transition: background 0.12s, border-color 0.12s, color 0.12s;
-      user-select: none;
-    }
-
-    .btn:hover {
-      background: var(--surface2);
-      border-color: #4a6080;
-    }
-
-    .btn-danger {
-      color: var(--danger);
-    }
-
-    .btn-danger:hover {
-      border-color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-    }
-
-    /* ── Result cards ── */
-    .results {
+    /* ── App shell ─────────────────────────────────────── */
+    .app {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 4px;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+    /* ── Header ─────────────────────────────────────────── */
+    .app-header {
+      background: var(--primary-dark);
+      border-bottom: 3px solid var(--accent);
+      flex-shrink: 0;
+      padding: 12px 20px;
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      transition: border-color 0.15s;
-      min-height: 46px;
-    }
-
-    .result-card:hover {
-      border-color: #3a526b;
-    }
-
-    .result-label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      min-width: 88px;
-      flex-shrink: 0;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-    }
-
-    .result-text {
-      flex: 1;
-      font-size: 1rem;
-      line-height: 1.5;
-      word-break: break-word;
-      min-height: 1.5em;
-      color: var(--text);
-    }
-
-    .result-text.empty {
-      color: var(--text-muted);
-      font-style: italic;
-      font-size: 0.85rem;
-    }
-
-    .copy-btn {
-      padding: 4px 11px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.72rem;
-      font-family: inherit;
-      flex-shrink: 0;
-      transition: background 0.12s, color 0.12s, border-color 0.12s;
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    .copy-btn:hover {
-      background: var(--surface2);
-      color: var(--text);
-    }
-
-    .copy-btn.copied {
-      background: var(--success);
-      color: white;
-      border-color: var(--success);
-    }
-
-    /* ── Install banner ── */
-    #install-banner {
-      display: none;
-      margin-top: 24px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius);
       align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
 
-    #install-banner p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
+    .header-title {
+      color: var(--white);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    #install-banner strong {
-      color: var(--text);
-    }
-
-    .install-btn {
-      padding: 7px 16px;
+    .header-title .t-badge {
       background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 7px;
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-family: inherit;
-      font-weight: 600;
-      flex-shrink: 0;
-      transition: background 0.12s;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .install-btn:hover { background: var(--accent-hover); }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
-    /* ── Responsive ── */
-    @media (max-width: 480px) {
-      .result-label { min-width: 70px; font-size: 0.65rem; }
-      .result-text { font-size: 0.95rem; }
+    .btn-header {
+      background: rgba(255,255,255,0.12);
+      color: var(--text-light);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      padding: 5px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-header:hover {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    #installBtn { display: none; }
+
+    /* ── Two-panel layout ────────────────────────────────── */
+    .panels {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── Left panel (input) ──────────────────────────────── */
+    .left-panel {
+      background: var(--primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 2px solid var(--primary-dark);
+    }
+
+    .panel-header {
+      padding: 12px 16px 8px;
+      flex-shrink: 0;
+    }
+
+    .panel-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .left-panel .panel-label { color: var(--text-light); }
+    .right-panel .panel-label { color: var(--neutral); }
+
+    .left-panel .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-input {
+      background: rgba(255,255,255,0.12);
+      color: var(--text-light);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+
+    .btn-input:hover {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    #inputText {
+      flex: 1;
+      margin: 0 14px 14px;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    #inputText::placeholder { color: rgba(255,255,255,0.35); }
+    #inputText:focus { border-color: rgba(255,255,255,0.45); }
+
+    /* ── Right panel (output) ────────────────────────────── */
+    .right-panel {
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .right-panel .panel-header {
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .copy-all-btn {
+      background: transparent;
+      color: var(--neutral);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .copy-all-btn:hover {
+      background: var(--bg);
+      color: var(--text-dark);
+    }
+
+    #outputList {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px 14px;
+    }
+
+    /* ── Style rows ──────────────────────────────────────── */
+    .style-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      background: var(--bg);
+      margin-bottom: 5px;
+      border: 1px solid transparent;
+      transition: border-color 0.12s;
+    }
+
+    .style-row:hover {
+      border-color: var(--accent-border);
+    }
+
+    .style-pill {
+      font-size: 9.5px;
+      padding: 3px 9px;
+      background: var(--accent-bg);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-radius: 99px;
+      min-width: 80px;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .style-output {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-dark);
+      word-break: break-word;
+      min-width: 0;
+    }
+
+    .style-output.placeholder {
+      color: #bbb;
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    .copy-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.08s;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover { background: var(--accent-hover); }
+    .copy-btn:active { transform: scale(0.95); }
+    .copy-btn.copied { background: #2a7a3b; }
+
+    /* ── Tooltips ────────────────────────────────────────── */
+    [data-tip] { position: relative; }
+
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a2535;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 400;
+      padding: 5px 10px;
+      border-radius: 5px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 99;
+      width: max-content;
+      max-width: 240px;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .app-footer {
+      background: var(--primary-dark);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+      padding: 5px 16px;
+    }
+
+    .footer-note {
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* ── Mobile stacking ─────────────────────────────────── */
+    @media (max-width: 680px) {
+      .panels {
+        grid-template-columns: 1fr;
+        grid-template-rows: 50vh 1fr;
+      }
+      .left-panel {
+        border-right: none;
+        border-bottom: 2px solid var(--primary-dark);
+      }
     }
   </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <h1>✦ Text Formatter</h1>
-    <span class="badge">Unicode</span>
+<div class="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-title">
+      <div class="t-badge">T</div>
+      Text Formatter
+    </div>
+    <div class="header-actions">
+      <button id="installBtn" class="btn-header"
+        data-tip="Install as an app on your device for offline use">
+        ⬇ Install App
+      </button>
+    </div>
+  </header>
+
+  <!-- Panels -->
+  <div class="panels">
+
+    <!-- LEFT: Input -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <span class="panel-label">Your Text</span>
+        <div class="input-actions">
+          <button class="btn-input" id="formatBtn"
+            data-tip="Fix spacing, punctuation, and capitalization. Protects URLs, emails, and @mentions from being changed.">
+            Format Sentences
+          </button>
+          <button class="btn-input" id="clearBtn"
+            data-tip="Clear the input and reset all formatted previews.">
+            Clear
+          </button>
+        </div>
+      </div>
+      <textarea id="inputText"
+        placeholder="Type or paste your text here…&#10;&#10;Formatted versions appear on the right. Click Copy next to any style to grab it."
+        spellcheck="true"
+        autocorrect="on"
+      ></textarea>
+    </div>
+
+    <!-- RIGHT: Output -->
+    <div class="right-panel">
+      <div class="panel-header">
+        <span class="panel-label">Formatted Styles</span>
+        <button class="copy-all-btn" id="copyAllBtn"
+          data-tip="Copy all 12 formatted styles to the clipboard, each labeled, separated by blank lines.">
+          Copy All
+        </button>
+      </div>
+      <div id="outputList"></div>
+    </div>
+
   </div>
-  <p class="subtitle">Styles that copy &amp; paste across apps — Discord, Notion, Twitter, email, anywhere.</p>
 
-  <!-- Input -->
-  <div class="input-wrap">
-    <textarea id="input" placeholder="Type or paste your text here…" spellcheck="true" autocorrect="on"></textarea>
-    <span class="char-count" id="char-count">0</span>
-  </div>
-
-  <!-- Case tools -->
-  <p class="section-label">Case &amp; Text Tools</p>
-  <div class="btn-group">
-    <button class="btn" onclick="applyCase('sentences')" title="Capitalize first letter of each sentence">Format Sentences</button>
-    <button class="btn" onclick="applyCase('title')" title="Capitalize major words">Title Case</button>
-    <button class="btn" onclick="applyCase('upper')">UPPERCASE</button>
-    <button class="btn" onclick="applyCase('lower')">lowercase</button>
-    <button class="btn btn-danger" onclick="clearInput()">Clear</button>
-  </div>
-
-  <!-- Unicode style outputs -->
-  <p class="section-label">Unicode Styles — copy &amp; paste anywhere</p>
-  <div class="results" id="results"></div>
-
-  <!-- PWA install prompt -->
-  <div id="install-banner">
-    <p><strong>Install as an app</strong> — opens in its own window, works offline.</p>
-    <button class="install-btn" id="install-btn">Install</button>
-  </div>
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span class="footer-note">Unicode styles copy-paste into Discord, Notion, Twitter, Slack, and more — the formatting travels with the text.</span>
+  </footer>
 
 </div>
 
 <script>
-  // ─────────────────────────────────────────────
-  //  Unicode conversion helpers
-  // ─────────────────────────────────────────────
+  'use strict';
 
-  const cp = (n) => String.fromCodePoint(n);
+  /* ── Helpers ──────────────────────────────────────────── */
+  const cp = n => String.fromCodePoint(n);
 
+  function mapRange(text, ucBase, lcBase, dgBase) {
+    return [...text].map(ch => {
+      const c = ch.charCodeAt(0);
+      if (ch >= 'A' && ch <= 'Z') return cp(ucBase + c - 65);
+      if (ch >= 'a' && ch <= 'z') return cp(lcBase + c - 97);
+      if (dgBase != null && ch >= '0' && ch <= '9') return cp(dgBase + c - 48);
+      return ch;
+    }).join('');
+  }
+
+  /* ── Exception maps ───────────────────────────────────── */
+  const SCRIPT_LOWER = [
+    0x1D4B6,0x1D4B7,0x1D4B8,0x1D4B9, // a b c d
+    0x212F,                            // e -> ℯ
+    0x1D4BB,                           // f
+    0x210A,                            // g -> ℊ
+    0x1D4BD,0x1D4BE,0x1D4BF,          // h i j
+    0x1D4C0,0x1D4C1,0x1D4C2,0x1D4C3, // k l m n
+    0x2134,                            // o -> ℴ
+    0x1D4C5,0x1D4C6,0x1D4C7,0x1D4C8, // p q r s
+    0x1D4C9,0x1D4CA,0x1D4CB,0x1D4CC, // t u v w
+    0x1D4CD,0x1D4CE,0x1D4CF           // x y z
+  ];
+  const SCRIPT_UPPER = [
+    0x1D49C,                           // A
+    0x212C,                            // B -> ℬ
+    0x1D49E,0x1D49F,                   // C D
+    0x2130,                            // E -> ℰ
+    0x2131,                            // F -> ℱ
+    0x1D4A2,                           // G
+    0x210B,                            // H -> ℋ
+    0x2110,                            // I -> ℐ
+    0x1D4A5,0x1D4A6,                   // J K
+    0x2112,                            // L -> ℒ
+    0x2133,                            // M -> ℳ
+    0x1D4A9,0x1D4AA,0x1D4AB,0x1D4AC, // N O P Q
+    0x211B,                            // R -> ℛ
+    0x1D4AE,0x1D4AF,0x1D4B0,          // S T U
+    0x1D4B1,0x1D4B2,0x1D4B3,0x1D4B4, // V W X Y
+    0x1D4B5                            // Z
+  ];
+  const FRAKTUR_UPPER = [
+    0x1D504,0x1D505,                   // A B
+    0x212D,                            // C -> ℭ
+    0x1D507,0x1D508,0x1D509,0x1D50A, // D E F G
+    0x210C,                            // H -> ℌ
+    0x2111,                            // I -> ℑ
+    0x1D50D,0x1D50E,0x1D50F,          // J K L
+    0x1D510,0x1D511,0x1D512,0x1D513, // M N O P
+    0x1D514,                           // Q
+    0x211C,                            // R -> ℜ
+    0x1D516,0x1D517,0x1D518,          // S T U
+    0x1D519,0x1D51A,0x1D51B,0x1D51C, // V W X Y
+    0x2128                             // Z -> ℨ
+  ];
+  const DS_UPPER = [
+    0x1D538,0x1D539,                   // A B
+    0x2102,                            // C -> ℂ
+    0x1D53B,0x1D53C,0x1D53D,0x1D53E, // D E F G
+    0x210D,                            // H -> ℍ
+    0x1D540,0x1D541,0x1D542,0x1D543, // I J K L
+    0x1D544,                           // M
+    0x2115,                            // N -> ℕ
+    0x1D546,                           // O
+    0x2119,                            // P -> ℙ
+    0x211A,                            // Q -> ℚ
+    0x211D,                            // R -> ℝ
+    0x1D54A,0x1D54B,0x1D54C,          // S T U
+    0x1D54D,0x1D54E,0x1D54F,0x1D550, // V W X Y
+    0x2124                             // Z -> ℤ
+  ];
+
+  /* ── Style definitions ───────────────────────────────── */
   const STYLES = [
     {
       key: 'bold',
       label: 'Bold',
-      fn(text) {
-        return [...text].map(ch => {
-          const c = ch.charCodeAt(0);
-          if (ch >= 'a' && ch <= 'z') return cp(0x1D41A + c - 97);
-          if (ch >= 'A' && ch <= 'Z') return cp(0x1D400 + c - 65);
-          if (ch >= '0' && ch <= '9') return cp(0x1D7CE + c - 48);
-          return ch;
-        }).join('');
-      }
+      tip: 'Mathematical bold — copies as actual bold Unicode characters into Discord, Slack, Notion, Twitter, and anywhere that renders Unicode.',
+      fn: t => mapRange(t, 0x1D400, 0x1D41A, 0x1D7CE)
     },
     {
       key: 'italic',
       label: 'Italic',
-      fn(text) {
-        // Lowercase h has no italic math equivalent → use ℎ (U+210E, Planck constant)
-        return [...text].map(ch => {
-          if (ch === 'h') return 'ℎ';
-          const c = ch.charCodeAt(0);
-          if (ch >= 'a' && ch <= 'z') return cp(0x1D44E + c - 97);
-          if (ch >= 'A' && ch <= 'Z') return cp(0x1D434 + c - 65);
-          return ch;
-        }).join('');
-      }
+      tip: 'Mathematical italic — works anywhere Unicode renders, including social media profiles and bios where Markdown italic is stripped.',
+      fn: t => [...t].map(ch => {
+        if (ch === 'h') return 'ℎ'; // italic h lives in letterlike symbols
+        const c = ch.charCodeAt(0);
+        if (ch >= 'A' && ch <= 'Z') return cp(0x1D434 + c - 65);
+        if (ch >= 'a' && ch <= 'z') return cp(0x1D44E + c - 97);
+        return ch;
+      }).join('')
     },
     {
-      key: 'boldItalic',
+      key: 'bolditalic',
       label: 'Bold Italic',
-      fn(text) {
-        return [...text].map(ch => {
-          const c = ch.charCodeAt(0);
-          if (ch >= 'a' && ch <= 'z') return cp(0x1D482 + c - 97);
-          if (ch >= 'A' && ch <= 'Z') return cp(0x1D468 + c - 65);
-          return ch;
-        }).join('');
-      }
+      tip: 'Bold and italic combined — great for strong emphasis in plain-text environments that strip real Markdown formatting.',
+      fn: t => mapRange(t, 0x1D468, 0x1D482)
     },
     {
-      key: 'underline',
+      key: 'boldsans',
+      label: 'Bold Sans',
+      tip: 'Bold sans-serif — the same style WhatsApp renders for **bold** text, but as real Unicode so it works everywhere.',
+      fn: t => mapRange(t, 0x1D5D4, 0x1D5EE, 0x1D7EC)
+    },
+    {
+      key: 'italicsans',
+      label: 'Italic Sans',
+      tip: 'Italic sans-serif — a clean slanted look that survives copy-paste across apps without losing its style.',
+      fn: t => mapRange(t, 0x1D608, 0x1D622)
+    },
+    {
+      key: 'boldisans',
+      label: 'Bold Italic Sans',
+      tip: 'Bold italic sans-serif — maximum weight and angle. Useful for headings or dramatic emphasis in profiles and bios.',
+      fn: t => mapRange(t, 0x1D63C, 0x1D656)
+    },
+    {
+      key: 'under',
       label: 'Underline',
-      fn(text) {
-        // Combining underline character (U+0332) appended after each character
-        return [...text].map(ch => ch + '̲').join('');
-      }
+      tip: 'Unicode combining underline (U+0332) attaches to every character. Renders in most modern apps — may appear thin in some.',
+      fn: t => [...t].map(c => c + '̲').join('')
     },
     {
-      key: 'strikethrough',
+      key: 'strike',
       label: 'Strikethrough',
-      fn(text) {
-        // Combining long stroke overlay (U+0336) appended after each character
-        return [...text].map(ch => ch + '̶').join('');
-      }
+      tip: 'Unicode combining strikethrough (U+0336) — works in any Unicode-aware app, unlike ~~Markdown~~ which only works in a few.',
+      fn: t => [...t].map(c => c + '̶').join('')
+    },
+    {
+      key: 'mono',
+      label: 'Monospace',
+      tip: 'Mathematical monospace — looks like code. Great for technical content, usernames, or a retro terminal aesthetic.',
+      fn: t => mapRange(t, 0x1D670, 0x1D68A, 0x1D7F6)
+    },
+    {
+      key: 'script',
+      label: 'Script',
+      tip: 'Mathematical script / cursive — decorative and elegant. Popular for names, quotes, and creative writing.',
+      fn: t => [...t].map(ch => {
+        const c = ch.charCodeAt(0);
+        if (ch >= 'a' && ch <= 'z') return cp(SCRIPT_LOWER[c - 97]);
+        if (ch >= 'A' && ch <= 'Z') return cp(SCRIPT_UPPER[c - 65]);
+        return ch;
+      }).join('')
+    },
+    {
+      key: 'fraktur',
+      label: 'Fraktur',
+      tip: 'Mathematical Fraktur / Gothic — medieval blackletter style. Popular in metal, occult, and vintage-inspired aesthetics.',
+      fn: t => [...t].map(ch => {
+        const c = ch.charCodeAt(0);
+        if (ch >= 'a' && ch <= 'z') return cp(0x1D51E + c - 97);
+        if (ch >= 'A' && ch <= 'Z') return cp(FRAKTUR_UPPER[c - 65]);
+        return ch;
+      }).join('')
+    },
+    {
+      key: 'dblstruck',
+      label: 'Double Struck',
+      tip: 'Blackboard bold — used in math for real numbers (ℝ), integers (ℤ), naturals (ℕ). Also popular as a decorative style in bios.',
+      fn: t => [...t].map(ch => {
+        const c = ch.charCodeAt(0);
+        if (ch >= 'a' && ch <= 'z') return cp(0x1D552 + c - 97);
+        if (ch >= 'A' && ch <= 'Z') return cp(DS_UPPER[c - 65]);
+        if (ch >= '0' && ch <= '9') return cp(0x1D7D8 + c - 48);
+        return ch;
+      }).join('')
     }
   ];
 
-  // ─────────────────────────────────────────────
-  //  Build result cards
-  // ─────────────────────────────────────────────
+  /* ── Format Sentences ────────────────────────────────── */
+  function formatSentences(text) {
+    const saved = [];
+    const save = m => { saved.push(m); return '\x01' + (saved.length - 1) + '\x01'; };
 
-  const resultsEl = document.getElementById('results');
+    let s = text
+      .replace(/https?:\/\/[^\s]+/gi, save)
+      .replace(/www\.[^\s]+/gi, save)
+      .replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g, save)
+      .replace(/@[a-zA-Z0-9_]+/g, save);
 
-  STYLES.forEach(style => {
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.innerHTML = `
-      <span class="result-label">${style.label}</span>
-      <span class="result-text empty" id="out-${style.key}">type above to preview</span>
-      <button class="copy-btn" data-key="${style.key}" onclick="copyStyle('${style.key}')">Copy</button>
-    `;
-    resultsEl.appendChild(card);
-  });
+    s = s.replace(/[^\S\n]+/g, ' ');
+    s = s.replace(/ ([.?!,;:])/g, '$1');
+    s = s.replace(/([.?!])([A-Za-z\x01])/g, '$1 $2');
+    s = s.replace(/([,;:])([^\s\n])/g, '$1 $2');
+    s = s.replace(/^[ \t]*([a-z])/, c => c.toUpperCase());
+    s = s.replace(/([.?!][ \t]+)([a-z])/g, (_, p, c) => p + c.toUpperCase());
+    s = s.replace(/\n[ \t]*([a-z])/g, (_, c) => '\n' + c.toUpperCase());
+    s = s.replace(/\x01(\d+)\x01/g, (_, i) => saved[+i]);
 
-  // ─────────────────────────────────────────────
-  //  Live update on input
-  // ─────────────────────────────────────────────
+    return s.trim();
+  }
 
-  const inputEl = document.getElementById('input');
-  const charCountEl = document.getElementById('char-count');
+  /* ── DOM refs ────────────────────────────────────────── */
+  const inputEl    = document.getElementById('inputText');
+  const outputList = document.getElementById('outputList');
+  const formatBtn  = document.getElementById('formatBtn');
+  const clearBtn   = document.getElementById('clearBtn');
+  const copyAllBtn = document.getElementById('copyAllBtn');
+  const installBtn = document.getElementById('installBtn');
 
-  inputEl.addEventListener('input', updateAll);
-
-  function updateAll() {
-    const text = inputEl.value;
-    charCountEl.textContent = text.length;
-
+  /* ── Build output rows ───────────────────────────────── */
+  function buildRows() {
+    outputList.innerHTML = '';
     STYLES.forEach(style => {
-      const el = document.getElementById(`out-${style.key}`);
-      if (!text.trim()) {
-        el.textContent = 'type above to preview';
-        el.className = 'result-text empty';
+      const row = document.createElement('div');
+      row.className = 'style-row';
+      row.dataset.key = style.key;
+
+      const pill = document.createElement('span');
+      pill.className = 'style-pill';
+      pill.textContent = style.label;
+
+      const out = document.createElement('span');
+      out.className = 'style-output placeholder';
+      out.id = 'out-' + style.key;
+      out.textContent = 'Waiting for input…';
+
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.setAttribute('data-tip', 'Copy ' + style.label + ' version to clipboard — ' + style.tip);
+      btn.addEventListener('click', () => copyStyle(style.key, btn));
+
+      row.append(pill, out, btn);
+      outputList.appendChild(row);
+    });
+  }
+
+  /* ── Update all outputs ──────────────────────────────── */
+  function updateOutputs() {
+    const raw = inputEl.value;
+    STYLES.forEach(style => {
+      const el = document.getElementById('out-' + style.key);
+      if (!el) return;
+      if (!raw.trim()) {
+        el.textContent = 'Waiting for input…';
+        el.className = 'style-output placeholder';
       } else {
-        el.textContent = style.fn(text);
-        el.className = 'result-text';
+        el.textContent = style.fn(raw);
+        el.className = 'style-output';
       }
     });
   }
 
-  // ─────────────────────────────────────────────
-  //  Copy to clipboard
-  // ─────────────────────────────────────────────
-
-  function copyStyle(key) {
-    const el = document.getElementById(`out-${key}`);
-    if (el.classList.contains('empty')) return;
-
-    const text = el.textContent;
-
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.querySelector(`[data-key="${key}"].copy-btn`);
+  /* ── Copy single style ───────────────────────────────── */
+  function copyStyle(key, btn) {
+    const el = document.getElementById('out-' + key);
+    if (!el || el.classList.contains('placeholder')) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const orig = btn.textContent;
       btn.textContent = '✓ Copied';
       btn.classList.add('copied');
       setTimeout(() => {
-        btn.textContent = 'Copy';
+        btn.textContent = orig;
         btn.classList.remove('copied');
-      }, 1600);
-    }).catch(() => {
-      // Fallback for older browsers
-      const range = document.createRange();
-      range.selectNode(el);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      document.execCommand('copy');
-      window.getSelection().removeAllRanges();
+      }, 1500);
     });
   }
 
-  // ─────────────────────────────────────────────
-  //  Case / text tools (modify input text)
-  // ─────────────────────────────────────────────
-
-  function applyCase(type) {
-    const text = inputEl.value;
-    if (!text) return;
-
-    const MINOR = new Set(['a','an','the','and','but','or','nor','in','on','at','to','for','of','with','by','from','as','is','are','was','were']);
-
-    const transforms = {
-      sentences: t =>
-        t.toLowerCase()
-          .replace(/^\s*[a-z]/, ch => ch.toUpperCase())
-          .replace(/([.?!]\s+)([a-z])/g, (_, punct, ch) => punct + ch.toUpperCase()),
-
-      title: t =>
-        t.toLowerCase().replace(/\b\S+/g, (w, i) =>
-          i === 0 || !MINOR.has(w) ? w[0].toUpperCase() + w.slice(1) : w
-        ),
-
-      upper: t => t.toUpperCase(),
-      lower: t => t.toLowerCase()
-    };
-
-    inputEl.value = transforms[type](text);
-    updateAll();
-  }
-
-  function clearInput() {
-    inputEl.value = '';
-    updateAll();
-    inputEl.focus();
-  }
-
-  // ─────────────────────────────────────────────
-  //  PWA: install prompt
-  // ─────────────────────────────────────────────
-
-  let deferredPrompt = null;
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('install-banner').style.display = 'flex';
+  /* ── Copy all styles ─────────────────────────────────── */
+  copyAllBtn.addEventListener('click', () => {
+    const raw = inputEl.value.trim();
+    if (!raw) return;
+    const lines = STYLES.map(s => '[' + s.label + ']\n' + s.fn(raw)).join('\n\n');
+    navigator.clipboard.writeText(lines).then(() => {
+      const orig = copyAllBtn.textContent;
+      copyAllBtn.textContent = '✓ Copied All';
+      setTimeout(() => { copyAllBtn.textContent = orig; }, 1800);
+    });
   });
 
-  document.getElementById('install-btn').addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    if (outcome === 'accepted') {
-      document.getElementById('install-banner').style.display = 'none';
-    }
+  /* ── Format Sentences button ─────────────────────────── */
+  formatBtn.addEventListener('click', () => {
+    inputEl.value = formatSentences(inputEl.value);
+    updateOutputs();
+  });
+
+  /* ── Clear button ────────────────────────────────────── */
+  clearBtn.addEventListener('click', () => {
+    inputEl.value = '';
+    updateOutputs();
+    inputEl.focus();
+  });
+
+  /* ── Live update ─────────────────────────────────────── */
+  inputEl.addEventListener('input', updateOutputs);
+
+  /* ── PWA install ─────────────────────────────────────── */
+  let deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.style.display = 'block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const result = await deferredInstallPrompt.userChoice;
+    if (result.outcome === 'accepted') installBtn.style.display = 'none';
+    deferredInstallPrompt = null;
   });
 
   window.addEventListener('appinstalled', () => {
-    document.getElementById('install-banner').style.display = 'none';
-    deferredPrompt = null;
+    installBtn.style.display = 'none';
   });
 
-  // ─────────────────────────────────────────────
-  //  PWA: service worker registration
-  // ─────────────────────────────────────────────
-
+  /* ── Service worker ──────────────────────────────────── */
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(err => {
-      console.warn('Service worker registration failed:', err);
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
   }
+
+  /* ── Init ────────────────────────────────────────────── */
+  buildRows();
+  updateOutputs();
 </script>
 </body>
 </html>

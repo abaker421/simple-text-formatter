@@ -4,8 +4,8 @@
   "description": "Convert text to Unicode styles that copy and paste across apps — Discord, Notion, Twitter, email, and more.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#1e40af",
+  "background_color": "#1c3560",
+  "theme_color": "#2E5082",
   "orientation": "any",
   "icons": [
     {
