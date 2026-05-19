@@ -1,7 +1,8 @@
 // Text Formatter — Service Worker
-// Caches all app files for offline use.
+// Network-first for HTML so new deploys show up immediately.
+// Cache-first for static assets (icon, manifest) since they rarely change.
 
-const CACHE_NAME = 'text-formatter-v1';
+const CACHE_NAME = 'text-formatter-v2';
 
 const ASSETS = [
   './',
@@ -10,7 +11,7 @@ const ASSETS = [
   './icon.svg'
 ];
 
-// On install: cache all static assets
+// On install: pre-cache all static assets, then take over immediately.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
@@ -18,7 +19,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// On activate: delete old caches
+// On activate: delete any caches that aren't the current version.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -32,9 +33,32 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// On fetch: serve from cache, fall back to network
+// On fetch:
+//   - For navigations / HTML: network-first, fall back to cache offline.
+//   - For everything else: cache-first, fall back to network.
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const isHTML =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(req)
+        .then(res => {
+          // Update the cached copy in the background.
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req).then(c => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(req).then(cached => cached || fetch(req))
   );
 });
