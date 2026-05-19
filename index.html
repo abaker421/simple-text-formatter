@@ -600,6 +600,7 @@
           <button class="btn-transform" id="titleBtn"  data-tip="Capitalize the first letter of every word">Title Case</button>
           <button class="btn-transform" id="stripBtn"  data-tip="Remove Unicode formatting — converts 𝐛𝐨𝐥𝐝, 𝓈𝒸𝓇𝒾𝓅𝓉, ｖａｐｏｒｗａｖｅ back to plain text">Strip Unicode</button>
           <button class="btn-transform btn-chars-toggle" id="charsToggle"
+            aria-expanded="false" aria-controls="specialCharsRow"
             data-tip="Show/hide special character insert buttons — em dash, smart quotes, arrows, math symbols, and more">Chars ▾</button>
         </div>
         <div class="special-chars-row" id="specialCharsRow">
@@ -664,8 +665,8 @@
           autocomplete="off" />
       </div>
       <div class="filter-chips">
-        <button class="chip active" data-filter="all">All</button>
-        <button class="chip" data-filter="favs">★ Favorites</button>
+        <button class="chip active" data-filter="all" aria-pressed="true">All</button>
+        <button class="chip" data-filter="favs" aria-pressed="false">★ Favorites</button>
       </div>
       <div id="outputList"></div>
 
@@ -706,6 +707,10 @@
 
   <!-- History dropdown -->
   <div id="hist-dropdown" class="hist-dropdown"></div>
+
+  <!-- Screen reader announcements for copy actions -->
+  <div id="sr-announce" aria-live="polite" aria-atomic="true"
+    style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;"></div>
 
   <!-- Tooltip portal — position:fixed, never clipped by parent overflow:hidden -->
   <div id="tt-portal"></div>
@@ -999,6 +1004,13 @@
     }
   ];
 
+  /* ── Styles lookup map (O(1) key → style object) ────── */
+  const STYLES_MAP = Object.fromEntries(STYLES.map(s => [s.key, s]));
+
+  /* ── Cached output element refs (populated in buildRows) */
+  const outputEls = {};
+  let zalgoSlider = null;
+
   /* ── Format Sentences ────────────────────────────────── */
   function formatSentences(text) {
     const saved=[], save=m=>{saved.push(m);return '\x01'+(saved.length-1)+'\x01';};
@@ -1040,6 +1052,8 @@
   const comboBase    = document.getElementById('comboBase');
   const comboMod     = document.getElementById('comboMod');
   const comboCopy    = document.getElementById('combo-copy');
+  const comboOut     = document.getElementById('combo-out');
+  const srAnnounce   = document.getElementById('sr-announce');
   const histDropdown = document.getElementById('hist-dropdown');
   const filterChips  = document.querySelectorAll('.chip[data-filter]');
 
@@ -1059,9 +1073,10 @@
   /* ── Unified visibility (search + filter chip) ────────── */
   function applyVisibility() {
     const q = styleSearch.value.toLowerCase().trim();
-    document.querySelectorAll('.style-row[data-key]').forEach(row => {
+    const rows = document.querySelectorAll('.style-row[data-key]');
+    rows.forEach(row => {
       const key = row.dataset.key;
-      const style = STYLES.find(s => s.key === key);
+      const style = STYLES_MAP[key];
       let show;
       if (q) {
         show = style && (style.label.toLowerCase().includes(q) || style.key.toLowerCase().includes(q));
@@ -1086,7 +1101,7 @@
     } else if (noFavMsg) { noFavMsg.style.display = 'none'; }
 
     // No-search-results message
-    const visible = [...document.querySelectorAll('.style-row[data-key]')].some(r => r.style.display !== 'none');
+    const visible = [...rows].some(r => r.style.display !== 'none');
     let noSearchMsg = document.getElementById('no-search-msg');
     if (q && !visible) {
       if (!noSearchMsg) {
@@ -1101,6 +1116,8 @@
   }
 
   /* ── History ─────────────────────────────────────────── */
+  let histIsOpen = false;
+
   function saveToHistory(text) {
     if (!text || text.trim().length < 5) return;
     let hist = getHistory();
@@ -1135,6 +1152,7 @@
     });
   }
   function openHistory() {
+    histIsOpen = true;
     buildHistoryContent();
     const r = histBtn.getBoundingClientRect();
     histDropdown.style.top  = (r.bottom+4)+'px';
@@ -1144,6 +1162,7 @@
     setTimeout(() => document.addEventListener('click', histOutside), 0);
   }
   function closeHistory() {
+    histIsOpen = false;
     histDropdown.style.display = 'none';
     document.removeEventListener('click', histOutside);
   }
@@ -1177,6 +1196,7 @@
 
       const out = document.createElement('span');
       out.className = 'style-output placeholder'; out.id = 'out-'+style.key; out.textContent = 'Waiting for input…';
+      outputEls[style.key] = out;
 
       const heartBtn = document.createElement('button');
       heartBtn.className = 'heart-btn'+(favorites.has(style.key)?' active':'');
@@ -1192,6 +1212,7 @@
         const ctrl = document.createElement('div'); ctrl.className = 'zalgo-ctrl';
         const slider = document.createElement('input');
         slider.type='range'; slider.min=1; slider.max=3; slider.step=1; slider.value=1; slider.id='zalgo-slider';
+        zalgoSlider = slider;
         const lvlLbl = document.createElement('span'); lvlLbl.className='zalgo-level'; lvlLbl.id='zalgo-val';
         const LEVELS=['Subtle','Medium','Chaos']; lvlLbl.textContent=LEVELS[0];
         slider.addEventListener('input', () => {
@@ -1222,7 +1243,6 @@
     limitBarFill.style.width = Math.min(chars / BAR_MAX * 100, 100) + '%';
 
     const active = LIMITS.find(l => chars <= l.n);
-    const exceeded = LIMITS.filter(l => chars > l.n);
 
     let color = '#4ade80';
     if (active) {
@@ -1248,7 +1268,7 @@
 
   /* ── Combo ───────────────────────────────────────────── */
   function updateCombo() {
-    const out = document.getElementById('combo-out');
+    const out = comboOut;
     if (!out) return;
     const raw = inputEl.value;
     if (!raw.trim()) { out.textContent='Waiting for input…'; out.className='style-output placeholder'; return; }
@@ -1265,11 +1285,11 @@
     const raw = inputEl.value;
     updateCounter();
     STYLES.forEach(style => {
-      const el = document.getElementById('out-'+style.key);
+      const el = outputEls[style.key];
       if (!el) return;
       if (!raw.trim()) { el.textContent='Waiting for input…'; el.className='style-output placeholder'; }
       else {
-        const level = style.hasSlider ? (parseInt(document.getElementById('zalgo-slider')?.value)||1) : undefined;
+        const level = style.hasSlider ? (parseInt(zalgoSlider?.value)||1) : undefined;
         el.textContent = style.fn(raw,level); el.className = 'style-output';
       }
     });
@@ -1278,18 +1298,19 @@
 
   /* ── Copy ────────────────────────────────────────────── */
   function copyStyle(key, btn) {
-    const el = document.getElementById('out-'+key);
+    const el = outputEls[key];
     if (!el||el.classList.contains('placeholder')) return;
     navigator.clipboard.writeText(el.textContent).then(() => {
       const orig=btn.textContent; btn.textContent='✓ Copied'; btn.classList.add('copied');
-      setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('copied'); },1500);
+      srAnnounce.textContent = STYLES_MAP[key]?.label + ' style copied';
+      setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('copied'); srAnnounce.textContent=''; },1500);
     });
   }
 
   /* ── Event listeners ─────────────────────────────────── */
   formatBtn.addEventListener('click', () => { saveToHistory(inputEl.value); inputEl.value=formatSentences(inputEl.value); updateOutputs(); });
   clearBtn.addEventListener('click',  () => { saveToHistory(inputEl.value); inputEl.value=''; updateOutputs(); inputEl.focus(); });
-  histBtn.addEventListener('click', e => { e.stopPropagation(); histDropdown.style.display!=='none'&&histDropdown.style.display!=='' ? closeHistory() : openHistory(); });
+  histBtn.addEventListener('click', e => { e.stopPropagation(); histIsOpen ? closeHistory() : openHistory(); });
   capsBtn.addEventListener('click',   () => { inputEl.value=inputEl.value.toUpperCase(); updateOutputs(); });
   lowerBtn.addEventListener('click',  () => { inputEl.value=inputEl.value.toLowerCase(); updateOutputs(); });
   titleBtn.addEventListener('click',  () => { inputEl.value=inputEl.value.replace(/\b\w/g,c=>c.toUpperCase()); updateOutputs(); });
@@ -1300,6 +1321,7 @@
     const open = specialCharsRow.classList.toggle('open');
     charsToggle.classList.toggle('open', open);
     charsToggle.textContent = open ? 'Chars ▴' : 'Chars ▾';
+    charsToggle.setAttribute('aria-expanded', String(open));
   });
 
   /* ── JS tooltip portal ───────────────────────────────── */
@@ -1362,18 +1384,20 @@
   comboMod.addEventListener('change',  updateCombo);
 
   comboCopy.addEventListener('click', () => {
-    const out = document.getElementById('combo-out');
+    const out = comboOut;
     if (!out||out.classList.contains('placeholder')) return;
     navigator.clipboard.writeText(out.textContent).then(() => {
       const orig=comboCopy.textContent; comboCopy.textContent='✓ Copied'; comboCopy.classList.add('copied');
-      setTimeout(()=>{ comboCopy.textContent=orig; comboCopy.classList.remove('copied'); },1500);
+      srAnnounce.textContent = 'Combo style copied';
+      setTimeout(()=>{ comboCopy.textContent=orig; comboCopy.classList.remove('copied'); srAnnounce.textContent=''; },1500);
     });
   });
 
   filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
-      filterChips.forEach(c=>c.classList.remove('active'));
+      filterChips.forEach(c=>{ c.classList.remove('active'); c.setAttribute('aria-pressed','false'); });
       chip.classList.add('active');
+      chip.setAttribute('aria-pressed','true');
       activeFilter = chip.dataset.filter;
       styleSearch.value = ''; // clear search when switching tabs
       applyVisibility();
