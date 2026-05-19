@@ -127,6 +127,25 @@
     }
     .btn-input:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
+    /* ── Primary action row (Format Sentences) ───────────── */
+    .primary-action-row { padding-top: 1px; }
+    .btn-format-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, transform 0.08s;
+    }
+    .btn-format-primary:hover { background: var(--accent-hover); }
+    .btn-format-primary:active { transform: scale(0.99); }
+
     /* ── Transform buttons ───────────────────────────────── */
     .transform-row { display: flex; gap: 4px; flex-wrap: wrap; }
     .btn-transform {
@@ -142,15 +161,17 @@
       position: relative;
     }
     .btn-transform:hover { background: rgba(255,255,255,0.15); color: rgba(245,240,232,0.88); }
+    .btn-chars-toggle.open { background: rgba(255,255,255,0.22) !important; color: #fff !important; }
 
     /* ── Special character buttons ───────────────────────── */
     .special-chars-row {
-      display: flex;
+      display: none;
       flex-wrap: wrap;
       gap: 3px;
       align-items: center;
       padding-top: 1px;
     }
+    .special-chars-row.open { display: flex; }
     .chars-label {
       font-size: 9px;
       font-weight: 700;
@@ -495,30 +516,24 @@
     }
     .hist-use:hover { background: var(--primary-light); }
 
-    /* ── Tooltips ────────────────────────────────────────── */
-    [data-tip] { position: relative; }
-    [data-tip]::after {
-      content: attr(data-tip);
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 50%;
-      transform: translateX(-50%);
+    /* ── Tooltips — rendered via JS portal (position:fixed bypasses all overflow:hidden) ── */
+    #tt-portal {
+      position: fixed;
       background: #1a2535;
       color: #fff;
       font-size: 11px;
       padding: 5px 10px;
       border-radius: 5px;
       pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s;
-      z-index: 99;
-      width: max-content;
+      z-index: 9999;
       max-width: 240px;
       white-space: normal;
       text-align: center;
       line-height: 1.4;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.15s;
     }
-    [data-tip]:hover::after { opacity: 1; }
 
     /* ── Footer ──────────────────────────────────────────── */
     .app-footer {
@@ -561,29 +576,33 @@
     <div class="left-panel">
       <div class="panel-header">
         <div class="header-top">
-          <span class="panel-label">Your Text</span>
+          <span class="panel-label">Text Format Options</span>
           <div class="input-actions">
-            <button class="btn-input" id="formatBtn"
-              data-tip="Fix spacing, punctuation, and capitalization. Protects URLs, emails, and @mentions.">
-              Format Sentences
-            </button>
             <button class="btn-input" id="histBtn"
-              data-tip="Load a recently typed text">
+              data-tip="Browse your last 10 texts — entries auto-save as you type and on clear">
               History
             </button>
             <button class="btn-input" id="clearBtn"
-              data-tip="Clear the input and reset all formatted previews.">
+              data-tip="Clear all text and reset every formatted preview on the right">
               Clear
             </button>
           </div>
+        </div>
+        <div class="primary-action-row">
+          <button class="btn-format-primary" id="formatBtn"
+            data-tip="Smart sentence cleanup — fixes capitalization, removes extra spaces, and corrects punctuation spacing. Protects URLs, emails, and @mentions from being changed.">
+            ✦ Format Sentences
+          </button>
         </div>
         <div class="transform-row">
           <button class="btn-transform" id="capsBtn"   data-tip="Convert all text to UPPERCASE">CAPS</button>
           <button class="btn-transform" id="lowerBtn"  data-tip="Convert all text to lowercase">lower</button>
           <button class="btn-transform" id="titleBtn"  data-tip="Capitalize the first letter of every word">Title Case</button>
           <button class="btn-transform" id="stripBtn"  data-tip="Remove Unicode formatting — converts 𝐛𝐨𝐥𝐝, 𝓈𝒸𝓇𝒾𝓅𝓉, ｖａｐｏｒｗａｖｅ back to plain text">Strip Unicode</button>
+          <button class="btn-transform btn-chars-toggle" id="charsToggle"
+            data-tip="Show/hide special character insert buttons — em dash, smart quotes, arrows, math symbols, and more">Chars ▾</button>
         </div>
-        <div class="special-chars-row">
+        <div class="special-chars-row" id="specialCharsRow">
           <span class="chars-label">Insert:</span>
           <button class="btn-special" data-char="—" data-tip="Em dash — long dash, great for parenthetical asides or replacing comma/semicolon">—</button>
           <button class="btn-special" data-char="–" data-tip="En dash – used for ranges (2020–2024) and compound adjectives">–</button>
@@ -687,6 +706,9 @@
 
   <!-- History dropdown -->
   <div id="hist-dropdown" class="hist-dropdown"></div>
+
+  <!-- Tooltip portal — position:fixed, never clipped by parent overflow:hidden -->
+  <div id="tt-portal"></div>
 
 </div>
 
@@ -1007,6 +1029,8 @@
   const lowerBtn     = document.getElementById('lowerBtn');
   const titleBtn     = document.getElementById('titleBtn');
   const stripBtn     = document.getElementById('stripBtn');
+  const charsToggle  = document.getElementById('charsToggle');
+  const specialCharsRow = document.getElementById('specialCharsRow');
   const installBtn   = document.getElementById('installBtn');
   const charCounter  = document.getElementById('charCounter');
   const limitBarFill = document.getElementById('limitBarFill');
@@ -1271,14 +1295,55 @@
   titleBtn.addEventListener('click',  () => { inputEl.value=inputEl.value.replace(/\b\w/g,c=>c.toUpperCase()); updateOutputs(); });
   stripBtn.addEventListener('click',  () => { inputEl.value=stripUnicode(inputEl.value); updateOutputs(); });
 
+  /* ── Chars toggle ────────────────────────────────────── */
+  charsToggle.addEventListener('click', () => {
+    const open = specialCharsRow.classList.toggle('open');
+    charsToggle.classList.toggle('open', open);
+    charsToggle.textContent = open ? 'Chars ▴' : 'Chars ▾';
+  });
+
+  /* ── JS tooltip portal ───────────────────────────────── */
+  const ttPortal = document.getElementById('tt-portal');
+  let ttActive = null;
+
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest('[data-tip]');
+    if (!t || t === ttActive) return;
+    ttActive = t;
+    ttPortal.textContent = t.dataset.tip;
+    ttPortal.style.display = 'block';
+    ttPortal.style.opacity = '0';
+    requestAnimationFrame(() => {
+      const r  = t.getBoundingClientRect();
+      const tw = ttPortal.offsetWidth;
+      const th = ttPortal.offsetHeight;
+      // Prefer below; fall back to above if not enough space
+      const top = (window.innerHeight - r.bottom > th + 12)
+        ? r.bottom + 5
+        : r.top - th - 8;
+      let left = r.left + r.width / 2 - tw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+      ttPortal.style.top  = top  + 'px';
+      ttPortal.style.left = left + 'px';
+      ttPortal.style.opacity = '1';
+    });
+  });
+  document.addEventListener('mouseout', e => {
+    if (!ttActive || ttActive.contains(e.relatedTarget)) return;
+    ttActive = null;
+    ttPortal.style.opacity = '0';
+    setTimeout(() => { if (ttPortal.style.opacity === '0') ttPortal.style.display = 'none'; }, 160);
+  });
+
   /* ── Special character insert ─────────────────────────── */
   function insertAtCursor(char) {
     const s = inputEl.selectionStart ?? inputEl.value.length;
     const e = inputEl.selectionEnd   ?? inputEl.value.length;
     const v = inputEl.value;
     inputEl.value = v.slice(0, s) + char + v.slice(e);
-    inputEl.selectionStart = inputEl.selectionEnd = s + char.length;
+    // focus() before setting cursor — some browsers reset selection on focus()
     inputEl.focus();
+    inputEl.selectionStart = inputEl.selectionEnd = s + char.length;
     updateOutputs();
   }
   document.querySelectorAll('.btn-special').forEach(btn => {
